@@ -1,1 +1,7 @@
-<Solution />
+<Solution>
+  <Project Path="FiapCloudGames.Contracts/FiapCloudGames.Contracts.csproj" Id="b883a9a2-9949-4bda-ad84-caf160fc798b" />
+  <Project Path="FiapCloudGamesCatalog.Api/FiapCloudGamesCatalog.Api.csproj" Id="788c1946-7c6a-4bad-9df2-ec5a0a3a0660" />
+  <Project Path="FiapCloudGamesCatalog.Application/FiapCloudGamesCatalog.Application.csproj" Id="8313190e-98b7-4bb1-aa43-5497b3f8c866" />
+  <Project Path="FiapCloudGamesCatalog.Domain/FiapCloudGamesCatalog.Domain.csproj" Id="bd161a2f-dd3b-4287-b9e4-cf9e1f0995a2" />
+  <Project Path="FiapCloudGamesCatalog.Infra.Data/FiapCloudGamesCatalog.Infra.Data.csproj" Id="a39aaa66-1e70-4ccd-b782-d434e9ee4303" />
+</Solution>
