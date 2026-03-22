@@ -1,4 +1,4 @@
-﻿using FiapCloudGamesCatalog.Application.Dtos;
+using FiapCloudGamesCatalog.Application.Dtos;
 using FiapCloudGamesCatalog.Application.Services.Interfaces;
 using FiapCloudGamesCatalog.Domain.Entities;
 using FiapCloudGamesCatalog.Domain.Enums;
@@ -72,15 +72,15 @@ public class GameService : IGameService
             .Select(s => (GamePlatformEnum)Enum.Parse(typeof(GamePlatformEnum), s))
             .ToList();
 
-        game.Title = gameRequestDto.Title;
-        game.Genre = gameRequestDto.Genre;
-        game.Description = gameRequestDto.Description;
-        game.Developer = gameRequestDto.Developer;
-        game.Distributor = gameRequestDto.Distributor;
-        game.GamePlatforms = platforms;
-        game.GameVersion = gameRequestDto.GameVersion;
-        game.Available = gameRequestDto.Available;
-        game.DateUpdated = DateTime.UtcNow;
+        game.UpdateDetails(
+            gameRequestDto.Title,
+            gameRequestDto.Genre,
+            platforms,
+            gameRequestDto.Description,
+            gameRequestDto.Developer,
+            gameRequestDto.Distributor,
+            gameRequestDto.GameVersion,
+            gameRequestDto.Available);
 
         if(game.Price != gameRequestDto.Price)
         {

@@ -1,4 +1,4 @@
-﻿using FiapCloudGames.Contracts.IntegrationEvents;
+using FiapCloudGames.Contracts.IntegrationEvents;
 using FiapCloudGamesCatalog.Domain.Entities;
 using FiapCloudGamesCatalog.Domain.Events;
 using FiapCloudGamesCatalog.Domain.Repositories;
@@ -24,11 +24,11 @@ public class OrderCanceledEventHandler : INotificationHandler<OrderCanceledDomai
     {
         _logger?.LogInformation("OrderCanceledEventHandler: Handling OrderCanceledDomainEvent for order {OrderId}", notification.OrderId);
 
-        await _publishEndpoint.Publish<OrderCompletedIntegrationEvent>(new()
+        await _publishEndpoint.Publish<OrderCanceledIntegrationEvent>(new()
         {
             OrderId = notification.OrderId,
             UserId = notification.UserId,
-            GameIds = notification.Games.Select(x => x.Game.Id).ToList()
+            GameIds = notification.GameIds.ToList()
         });
 
         _logger?.LogInformation("OrderCanceledEventHandler: Published OrderCompletedIntegrationEvent for order {OrderId}", notification.OrderId);

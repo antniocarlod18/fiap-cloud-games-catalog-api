@@ -1,4 +1,4 @@
-﻿using FiapCloudGames.Contracts.IntegrationEvents;
+using FiapCloudGames.Contracts.IntegrationEvents;
 using FiapCloudGamesCatalog.Domain.Entities;
 using FiapCloudGamesCatalog.Domain.Events;
 using FiapCloudGamesCatalog.Domain.Exceptions;
@@ -28,7 +28,7 @@ namespace FiapCloudGamesCatalog.Application.EventHandler
             {
                 OrderId = notification.OrderId,
                 UserId = notification.UserId,
-                GameIds = notification.Games.Select(x => x.Game.Id).ToList()
+                GameIds = notification.GameIds.ToList()
             });
 
             _logger?.LogInformation("OrderCompleteEventHandler: Published OrderCompletedIntegrationEvent for order {OrderId}", notification.OrderId);

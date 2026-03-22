@@ -86,6 +86,7 @@ public class PromotionService : IPromotionService
             throw new ResourceNotFoundException(nameof(Promotion));
         }
 
+        promotion.Delete();
         _unitOfWork.PromotionsRepo.Delete(promotion);
         await _unitOfWork.Commit();
 

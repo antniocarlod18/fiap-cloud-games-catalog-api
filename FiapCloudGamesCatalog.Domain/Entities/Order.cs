@@ -1,4 +1,4 @@
-﻿using FiapCloudGamesCatalog.Domain.Aggregates;
+using FiapCloudGamesCatalog.Domain.Aggregates;
 using FiapCloudGamesCatalog.Domain.Enums;
 using FiapCloudGamesCatalog.Domain.Events;
 using FiapCloudGamesCatalog.Domain.Exceptions;
@@ -25,7 +25,7 @@ public class Order : AggregateRoot
         Games = games.Select(g => new OrderGameItem(this, g)).ToList(); ;
         Status = OrderStatusEnum.WaitingForPayment;
         Price = Games.Sum(g => g.Price);
-        AddDomainEvent(new OrderCreatedDomainEvent(Id, UserId, Games, Price));
+        AddDomainEvent(new OrderCreatedDomainEvent(Id, UserId, GetGameIds(), Price));
     }
 
     [SetsRequiredMembers]
@@ -38,9 +38,9 @@ public class Order : AggregateRoot
         if(Status != OrderStatusEnum.WaitingForPayment)
             throw new InvalidOrderStatusException(Status);
 
-        Status = OrderStatusEnum.Completed;
-        AddDomainEvent(new OrderCompleteDomainEvent(Id, UserId, Games));
-        DateUpdated = DateTime.UtcNow;
+        var @event = new OrderCompleteDomainEvent(Id, UserId, GetGameIds());
+        Apply(@event);
+        AddDomainEvent(@event);
     }
 
     public void CancelOrder()
@@ -48,22 +48,43 @@ public class Order : AggregateRoot
         if (Status != OrderStatusEnum.WaitingForPayment)
             throw new InvalidOrderStatusException(Status);
 
-        Status = OrderStatusEnum.Canceled;
-        AddDomainEvent(new OrderCanceledDomainEvent(Id, UserId, Games));
-        DateUpdated = DateTime.UtcNow;
+        var @event = new OrderCanceledDomainEvent(Id, UserId, GetGameIds());
+        Apply(@event);
+        AddDomainEvent(@event);
     }
 
     public void RefundOrder()
     {
         if(Status == OrderStatusEnum.Completed && DateTime.Now < base.DateCreated.AddDays(RefundPeriodInDays))
         {
-            Status = OrderStatusEnum.Refunded;
-            AddDomainEvent(new OrderRefundedDomainEvent(Id, UserId, Games));
-            DateUpdated = DateTime.UtcNow;
+            var @event = new OrderRefundedDomainEvent(Id, UserId, GetGameIds());
+            Apply(@event);
+            AddDomainEvent(@event);
         }
         else
         {
             throw new CannotRefundOrderException();
         }
+    }
+
+    private IReadOnlyList<Guid> GetGameIds()
+        => Games?.Select(g => g.Game.Id).ToList() ?? [];
+
+    private void Apply(OrderCompleteDomainEvent @event)
+    {
+        Status = OrderStatusEnum.Completed;
+        DateUpdated = DateTime.UtcNow;
+    }
+
+    private void Apply(OrderCanceledDomainEvent @event)
+    {
+        Status = OrderStatusEnum.Canceled;
+        DateUpdated = DateTime.UtcNow;
+    }
+
+    private void Apply(OrderRefundedDomainEvent @event)
+    {
+        Status = OrderStatusEnum.Refunded;
+        DateUpdated = DateTime.UtcNow;
     }
 }

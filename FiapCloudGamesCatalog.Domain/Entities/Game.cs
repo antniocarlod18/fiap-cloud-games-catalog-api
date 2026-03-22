@@ -1,9 +1,11 @@
-﻿using FiapCloudGamesCatalog.Domain.Enums;
+using FiapCloudGamesCatalog.Domain.Aggregates;
+using FiapCloudGamesCatalog.Domain.Events;
+using FiapCloudGamesCatalog.Domain.Enums;
 using System.Diagnostics.CodeAnalysis;
 
 namespace FiapCloudGamesCatalog.Domain.Entities;
 
-public class Game : EntityBase
+public class Game : AggregateRoot
 {
     public required string Title { get; set; }
     public required string Genre { get; set; } 
@@ -31,6 +33,8 @@ public class Game : EntityBase
         this.GamePlatforms = gamePlatforms;
         this.GameVersion = gameVersion;
         this.Available = available;
+
+        AddDomainEvent(new GameCreatedDomainEvent(Id, Title, Genre, Price, Available, GamePlatforms.ToList()));
     }
 
     [SetsRequiredMembers]
@@ -40,8 +44,33 @@ public class Game : EntityBase
 
     public void UpdatePrice(decimal newPrice)
     {
+        var oldPrice = Price;
         Price = newPrice;
         DateUpdated = DateTime.UtcNow;
+        AddDomainEvent(new GamePriceUpdatedDomainEvent(Id, oldPrice, newPrice));
+    }
+
+    public void UpdateDetails(
+        string title,
+        string genre,
+        IList<GamePlatformEnum> gamePlatforms,
+        string? description,
+        string? developer,
+        string? distributor,
+        string? gameVersion,
+        bool available)
+    {
+        Title = title;
+        Genre = genre;
+        Description = description;
+        Developer = developer;
+        Distributor = distributor;
+        GamePlatforms = gamePlatforms;
+        GameVersion = gameVersion;
+        Available = available;
+        DateUpdated = DateTime.UtcNow;
+
+        AddDomainEvent(new GameUpdatedDomainEvent(Id, Title, Genre, Available));
     }
 
     public decimal GetPriceWithDiscount()

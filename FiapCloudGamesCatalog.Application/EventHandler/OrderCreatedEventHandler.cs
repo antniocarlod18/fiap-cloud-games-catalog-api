@@ -1,4 +1,4 @@
-﻿using FiapCloudGames.Contracts.IntegrationEvents;
+using FiapCloudGames.Contracts.IntegrationEvents;
 using FiapCloudGamesCatalog.Domain.Entities;
 using FiapCloudGamesCatalog.Domain.Events;
 using FiapCloudGamesCatalog.Domain.Repositories;
@@ -27,7 +27,7 @@ public class OrderCreatedEventHandler : INotificationHandler<OrderCreatedDomainE
         {
             OrderId = notification.OrderId,
             UserId = notification.UserId,
-            GameIds = notification.Games.Select(x => x.Game.Id).ToList(),
+            GameIds = notification.GameIds.ToList(),
             Price = notification.Price
         });
 

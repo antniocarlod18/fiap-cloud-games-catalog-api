@@ -1,9 +1,11 @@
-﻿using FiapCloudGamesCatalog.Domain.Exceptions;
+using FiapCloudGamesCatalog.Domain.Aggregates;
+using FiapCloudGamesCatalog.Domain.Events;
+using FiapCloudGamesCatalog.Domain.Exceptions;
 using System.Diagnostics.CodeAnalysis;
 
 namespace FiapCloudGamesCatalog.Domain.Entities;
 
-public class Promotion : EntityBase
+public class Promotion : AggregateRoot
 {
     public IList<Game> Games { get; set; } = [];
     public required decimal DiscountPercentage { get; set; }
@@ -23,6 +25,13 @@ public class Promotion : EntityBase
         DiscountPercentage = discountPercentage;
         StartDate = startDate;
         EndDate = endDate;
+
+        AddDomainEvent(new PromotionCreatedDomainEvent(
+            Id,
+            DiscountPercentage,
+            StartDate,
+            EndDate,
+            Games.Select(g => g.Id).ToList()));
     }
 
     [SetsRequiredMembers]
@@ -36,6 +45,7 @@ public class Promotion : EntityBase
             throw new InvalidOperationAddingGameToCartException(); 
 
         Games.Add(game);
+        AddDomainEvent(new PromotionGameAddedDomainEvent(Id, game.Id));
     }
 
     public void RemoveGame(Game game)
@@ -44,6 +54,12 @@ public class Promotion : EntityBase
         if (gameToRemove != null)
         {
             Games.Remove(gameToRemove);
+            AddDomainEvent(new PromotionGameRemovedDomainEvent(Id, game.Id));
         }
+    }
+
+    public void Delete()
+    {
+        AddDomainEvent(new PromotionDeletedDomainEvent(Id));
     }
 }

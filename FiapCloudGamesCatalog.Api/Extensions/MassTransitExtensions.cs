@@ -1,4 +1,5 @@
 ﻿using FiapCloudGamesCatalog.Api.Consumers;
+using FiapCloudGamesCatalog.Api.Filters;
 using MassTransit;
 
 namespace FiapCloudGamesCatalog.Api.Extensions
@@ -13,6 +14,11 @@ namespace FiapCloudGamesCatalog.Api.Extensions
 
                 x.UsingRabbitMq((context, cfg) =>
                 {
+                    cfg.UseSendFilter(typeof(TracingSendFilter<>), context);
+                    cfg.UsePublishFilter(typeof(TracingPublishFilter<>), context);
+
+                    cfg.UseConsumeFilter(typeof(TracingConsumeFilter<>), context);
+
                     cfg.Host(builder.Configuration["RabbitMQ:Host"], builder.Configuration["RabbitMQ:VirtualHost"], h =>
                     {
                         h.Username(builder.Configuration["RabbitMQ:UserName"]);

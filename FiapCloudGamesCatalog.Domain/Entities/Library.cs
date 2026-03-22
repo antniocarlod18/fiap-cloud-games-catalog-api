@@ -1,9 +1,11 @@
-﻿using FiapCloudGamesCatalog.Domain.Exceptions;
+using FiapCloudGamesCatalog.Domain.Aggregates;
+using FiapCloudGamesCatalog.Domain.Events;
+using FiapCloudGamesCatalog.Domain.Exceptions;
 using System.Diagnostics.CodeAnalysis;
 
 namespace FiapCloudGamesCatalog.Domain.Entities;
 
-public class Library : EntityBase
+public class Library : AggregateRoot
 {
     public required Guid UserId { get; set; }
     public required bool Active { get; set; }
@@ -15,6 +17,7 @@ public class Library : EntityBase
         UserId = userId;
         Games = games;
         Active = true;
+        AddDomainEvent(new LibraryCreatedDomainEvent(Id, UserId));
     }
 
     [SetsRequiredMembers]
@@ -29,6 +32,7 @@ public class Library : EntityBase
 
         DateUpdated = DateTime.UtcNow;
         Games.Add(game);
+        AddDomainEvent(new LibraryGameAddedDomainEvent(Id, UserId, game.Id));
     }
 
     public void Remove(Game game)
@@ -37,6 +41,7 @@ public class Library : EntityBase
         if (gameToRemove != null)
         {
             Games.Remove(gameToRemove);
+            AddDomainEvent(new LibraryGameRemovedDomainEvent(Id, UserId, game.Id));
         }
         DateUpdated = DateTime.UtcNow;
     }
@@ -45,5 +50,6 @@ public class Library : EntityBase
     {
         Active = false;
         DateUpdated = DateTime.UtcNow;
+        AddDomainEvent(new LibraryInactivatedDomainEvent(Id, UserId));
     }
 }
