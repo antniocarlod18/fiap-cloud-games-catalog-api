@@ -16,7 +16,7 @@ spec:
     spec:
       containers:
         - name: catalog-api
-          image: IMAGE_PLACEHOLDER
+          image: fgcacr13245.azurecr.io/antniocarlodfiapcloudgamescatalogapi:latest
           imagePullPolicy: IfNotPresent
           ports:
             - containerPort: 8080

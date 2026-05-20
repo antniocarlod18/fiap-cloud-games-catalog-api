@@ -7,7 +7,7 @@ spec:
     spec:
       containers:
         - name: migration
-          image: IMAGE_PLACEHOLDER
+          image: fgcacr13245.azurecr.io/antniocarlodfiapcloudgamescatalogapi:latest
           command: ["dotnet", "FiapCloudGamesCatalog.Api.dll", "migrate"]
           envFrom:
             - configMapRef:
