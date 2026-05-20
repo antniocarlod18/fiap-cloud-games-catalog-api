@@ -14,7 +14,7 @@ variables:
   dockerRegistryServiceConnection: 'c0c196b7-6307-40f2-8d06-3ab60ee1ffc8'
   imageRepository: 'antniocarlodfiapcloudgamescatalogapi'
   containerRegistry: 'fgcacr13245.azurecr.io'
-  dockerfilePath: '**/FiapCloudGamesCatalog.Api/Dockerfile'
+  dockerfilePath: 'FiapCloudGamesCatalog.Api/Dockerfile'
   tag: '$(Build.BuildId)'
   imagePullSecret: 'fgcacr132450a5c-auth'
 
@@ -64,6 +64,7 @@ stages:
         command: buildAndPush
         repository: $(imageRepository)
         dockerfile: $(dockerfilePath)
+        buildContext: '.'
         containerRegistry: $(dockerRegistryServiceConnection)
         tags: |
           $(tag)
