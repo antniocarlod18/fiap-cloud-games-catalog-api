@@ -73,7 +73,7 @@ stages:
       displayName: Publish Kubernetes Manifests
 
       inputs:
-        targetPath: 'k8s'
+        targetPath: 'FiapCloudGamesCatalog.Api/k8s'
         artifact: manifests  
 
 - stage: Deploy
