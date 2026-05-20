@@ -22,14 +22,11 @@ variables:
   vmImageName: 'ubuntu-latest'
 
 stages:
-# ==========================================
-# TESTS
-# ==========================================
-- stage: Tests
-  displayName: Unit Tests
+- stage: Build
+  displayName: Build and Unit Tests
 
   jobs:
-  - job: UnitTests
+  - job: Build
 
     pool:
       vmImage: $(vmImageName)
@@ -61,18 +58,6 @@ stages:
         projects: '**/*Tests.csproj'
         arguments: '--configuration Release --collect:"XPlat Code Coverage"'
 
-# ==========================================
-# BUILD
-# ==========================================
-
-- stage: Build
-  displayName: Build stage
-  jobs:
-  - job: Build
-    displayName: Build
-    pool:
-      vmImage: $(vmImageName)
-    steps:
     - task: Docker@2
       displayName: Build and push an image to container registry
       inputs:
@@ -82,9 +67,6 @@ stages:
         containerRegistry: $(dockerRegistryServiceConnection)
         tags: |
           $(tag)
-
-    - upload: manifests
-      artifact: manifests
 
     - task: PublishPipelineArtifact@1
       displayName: Publish Kubernetes Manifests
