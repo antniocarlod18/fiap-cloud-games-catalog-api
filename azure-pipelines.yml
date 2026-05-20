@@ -74,7 +74,7 @@ stages:
 
       inputs:
         targetPath: 'k8s'
-        artifact: manifests
+        artifact: manifests  
 
 - stage: Deploy
   displayName: Deploy stage
@@ -90,6 +90,24 @@ stages:
       runOnce:
         deploy:
           steps:
+          - task: DownloadPipelineArtifact@2
+            inputs:
+              artifact: manifests
+              path: $(Pipeline.Workspace)/manifests
+
+          - task: replacetokens@5
+            displayName: Replace Tokens
+
+            inputs:
+              rootDirectory: '$(Pipeline.Workspace)/manifests'
+
+              targetFiles: |
+                **/*.yml
+
+              tokenPattern: custom
+              tokenPrefix: '#{'
+              tokenSuffix: '}#'
+
           - task: KubernetesManifest@0
             displayName: Create imagePullSecret
             inputs:
@@ -102,13 +120,12 @@ stages:
             inputs:
               action: deploy
               manifests: |
-                $(Pipeline.Workspace)/manifests/deployment.yml
-                $(Pipeline.Workspace)/manifests/service.yml
                 $(Pipeline.Workspace)/manifests/configmap.yml
                 $(Pipeline.Workspace)/manifests/secret.yml
                 $(Pipeline.Workspace)/manifests/migration.yml
+                $(Pipeline.Workspace)/manifests/deployment.yml
+                $(Pipeline.Workspace)/manifests/service.yml
               imagePullSecrets: |
                 $(imagePullSecret)
               containers: |
                 $(containerRegistry)/$(imageRepository):$(tag)
-
