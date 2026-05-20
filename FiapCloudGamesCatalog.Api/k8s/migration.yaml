@@ -1,0 +1,17 @@
+apiVersion: batch/v1
+kind: Job
+metadata:
+  name: catalog-migration
+spec:
+  template:
+    spec:
+      containers:
+        - name: migration
+          image: antniocarlod18/fiap-catalog:latest
+          command: ["dotnet", "FiapCloudGamesCatalog.Api.dll", "migrate"]
+          envFrom:
+            - configMapRef:
+                name: catalog-api-config
+            - secretRef:
+                name: catalog-api-secrets 
+      restartPolicy: Never

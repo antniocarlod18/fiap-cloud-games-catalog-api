@@ -14,7 +14,8 @@ Microsserviço responsável por:
 Este serviço depende de:
 
 - MySQL
-- RabbitMQ
+- Redis (cache distribuído, StackExchange.Redis)
+- Azure Service Bus (MassTransit)
 - Elasticsearch
 
 ⚠️ Certifique-se de que a infraestrutura já está rodando.

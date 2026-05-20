@@ -16,6 +16,7 @@ using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.IdentityModel.Tokens;
+using StackExchange.Redis;
 using System.Security.Claims;
 using System.Text;
 
@@ -25,6 +26,9 @@ var builder = WebApplication.CreateBuilder(args);
 // Learn more about configuring OpenAPI at https://aka.ms/aspnet/openapi
 builder.Services.AddOpenApi();
 builder.AddElasticConfiguration();
+builder.Services.AddMongoCatalog(builder.Configuration);
+builder.AddRedisDistributedCache();
+builder.AddGameSearchElasticsearch();
 builder.AddMassTransitConfiguration();
 
 var serverVersion = new MySqlServerVersion(new Version(8, 0));
@@ -39,6 +43,7 @@ builder.Services.AddScoped<IGameService, GameService>();
 builder.Services.AddScoped<ILibraryService, LibraryService>();
 builder.Services.AddScoped<IOrderService, OrderService>();
 builder.Services.AddScoped<IPromotionService, PromotionService>();
+builder.Services.AddScoped<IGameReviewService, GameReviewService>();
 builder.Services.AddScoped<IUnitOfWork, UnitOfWork>();
 
 builder.Services.AddAuthentication(opt => {
@@ -101,6 +106,7 @@ app.UseHsts();
 app.MapAuditEndpoints();
 app.MapCartEndpoints();
 app.MapGameEndpoints();
+app.MapGameReviewEndpoints();
 app.MapLibraryEndpoints();
 app.MapOrderEndpoints();
 app.MapPromotionEndpoints();

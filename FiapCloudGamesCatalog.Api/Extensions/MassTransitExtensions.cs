@@ -1,4 +1,4 @@
-﻿using FiapCloudGamesCatalog.Api.Consumers;
+using FiapCloudGamesCatalog.Api.Consumers;
 using FiapCloudGamesCatalog.Api.Filters;
 using MassTransit;
 
@@ -12,18 +12,21 @@ namespace FiapCloudGamesCatalog.Api.Extensions
             {
                 x.SetEndpointNameFormatter(new KebabCaseEndpointNameFormatter(prefix: builder.Environment.EnvironmentName, includeNamespace: false));
 
-                x.UsingRabbitMq((context, cfg) =>
+                x.UsingAzureServiceBus((context, cfg) =>
                 {
                     cfg.UseSendFilter(typeof(TracingSendFilter<>), context);
                     cfg.UsePublishFilter(typeof(TracingPublishFilter<>), context);
 
                     cfg.UseConsumeFilter(typeof(TracingConsumeFilter<>), context);
 
-                    cfg.Host(builder.Configuration["RabbitMQ:Host"], builder.Configuration["RabbitMQ:VirtualHost"], h =>
+                    var connectionString = builder.Configuration["AzureServiceBus:ConnectionString"];
+                    if (string.IsNullOrWhiteSpace(connectionString))
                     {
-                        h.Username(builder.Configuration["RabbitMQ:UserName"]);
-                        h.Password(builder.Configuration["RabbitMQ:Password"]);
-                    });
+                        throw new InvalidOperationException(
+                            "Configure AzureServiceBus:ConnectionString with the Service Bus namespace connection string (Azure Portal → namespace → Shared access policies).");
+                    }
+
+                    cfg.Host(connectionString);
 
                     cfg.UseMessageRetry(r => r.Immediate(2));
                     cfg.ConfigureEndpoints(context);

@@ -1,3 +1,4 @@
+using FiapCloudGamesCatalog.Application.Caching;
 using FiapCloudGamesCatalog.Application.Dtos;
 using FiapCloudGamesCatalog.Application.Services.Interfaces;
 using FiapCloudGamesCatalog.Domain.Entities;
@@ -9,12 +10,16 @@ namespace FiapCloudGamesCatalog.Application.Services;
 
 public class PromotionService : IPromotionService
 {
+    private static readonly TimeSpan PromotionListCacheTtl = TimeSpan.FromMinutes(10);
+
     private readonly IUnitOfWork _unitOfWork;
+    private readonly ICacheService _cache;
     private readonly ILogger<PromotionService> _logger;
 
-    public PromotionService(IUnitOfWork unitOfWork, ILogger<PromotionService> logger)
+    public PromotionService(IUnitOfWork unitOfWork, ICacheService cache, ILogger<PromotionService> logger)
     {
         this._unitOfWork = unitOfWork;
+        this._cache = cache;
         this._logger = logger;
     }
 
@@ -30,6 +35,7 @@ public class PromotionService : IPromotionService
         var promotion = new Promotion(games, dto.DiscountPercentage, dto.StartDate, dto.EndDate);
         await _unitOfWork.PromotionsRepo.AddAsync(promotion);
         await _unitOfWork.Commit();
+        await InvalidatePromotionsAndGamesCacheAsync();
         _logger.LogInformation("Created promotion {PromotionId} with {Count} games", promotion.Id, games.Count);
         return promotion;
     }
@@ -50,30 +56,50 @@ public class PromotionService : IPromotionService
 
     public async Task<IList<PromotionResponseDto?>> GetAllAsync()
     {
+        var cacheKey = DistributedCacheKeys.PromotionsAll();
+        var cached = await _cache.GetAsync<List<PromotionResponseDto?>>(cacheKey);
+        if (cached != null)
+            return cached;
+
         var promotions = await _unitOfWork.PromotionsRepo.GetAllAsync();
 
         if (promotions == null || !promotions.Any())
         {
             _logger.LogInformation("No promotions found");
-            return [];
+            var empty = new List<PromotionResponseDto?>();
+            await _cache.SetAsync(cacheKey, empty, PromotionListCacheTtl);
+            return empty;
         }
 
+        var result = promotions.Select(x => (PromotionResponseDto?)x).ToList();
+        await _cache.SetAsync(cacheKey, result, PromotionListCacheTtl);
+
         _logger.LogInformation("Retrieved {Count} promotions", promotions.Count);
-        return promotions.Select(x => (PromotionResponseDto?)x).ToList();
+        return result;
     }
 
     public async Task<IList<PromotionResponseDto?>> GetActiveAsync()
     {
+        var cacheKey = DistributedCacheKeys.PromotionsActive();
+        var cached = await _cache.GetAsync<List<PromotionResponseDto?>>(cacheKey);
+        if (cached != null)
+            return cached;
+
         var promotions = await _unitOfWork.PromotionsRepo.GetActiveAsync();
 
         if (promotions == null || !promotions.Any())
         {
             _logger.LogInformation("No active promotions found");
-            return [];
+            var empty = new List<PromotionResponseDto?>();
+            await _cache.SetAsync(cacheKey, empty, PromotionListCacheTtl);
+            return empty;
         }
 
+        var result = promotions.Select(x => (PromotionResponseDto?)x).ToList();
+        await _cache.SetAsync(cacheKey, result, PromotionListCacheTtl);
+
         _logger.LogInformation("Retrieved {Count} active promotions", promotions.Count);
-        return promotions.Select(x => (PromotionResponseDto?)x).ToList();
+        return result;
     }
 
     public async Task DeleteAsync(Guid id)
@@ -89,6 +115,7 @@ public class PromotionService : IPromotionService
         promotion.Delete();
         _unitOfWork.PromotionsRepo.Delete(promotion);
         await _unitOfWork.Commit();
+        await InvalidatePromotionsAndGamesCacheAsync();
 
         _logger.LogInformation("Deleted promotion {PromotionId}", id);
     }
@@ -115,6 +142,7 @@ public class PromotionService : IPromotionService
         _unitOfWork.GamesRepo.Attach(game);
         _unitOfWork.PromotionsRepo.Update(promotion);
         await _unitOfWork.Commit();
+        await InvalidatePromotionsAndGamesCacheAsync();
 
         _logger.LogInformation("Added game {GameId} to promotion {PromotionId}", gameId, id);
         return promotion;
@@ -142,8 +170,16 @@ public class PromotionService : IPromotionService
         _unitOfWork.GamesRepo.Attach(game);
         _unitOfWork.PromotionsRepo.Update(promotion);
         await _unitOfWork.Commit();
+        await InvalidatePromotionsAndGamesCacheAsync();
 
         _logger.LogInformation("Removed game {GameId} from promotion {PromotionId}", gameId, id);
         return promotion;
+    }
+
+    private async Task InvalidatePromotionsAndGamesCacheAsync()
+    {
+        await _cache.RemoveByPrefixAsync(DistributedCacheKeys.PromotionsPrefix);
+        await _cache.RemoveByPrefixAsync(DistributedCacheKeys.GamesPrefix);
+        await _cache.RemoveByPrefixAsync(DistributedCacheKeys.SearchPrefix);
     }
 }

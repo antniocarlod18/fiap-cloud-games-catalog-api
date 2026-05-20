@@ -33,6 +33,9 @@ public static class GameEndpoints
         endpoints.MapDelete("/games/{id}", DeleteAsync)
             .RequireAuthorization(policy => policy.RequireRole("Admin"));
 
+        endpoints.MapGet("/games/search", SearchGamesAsync)
+            .RequireAuthorization(policy => policy.RequireRole("Admin", "User"));
+
         return endpoints;
     }
 
@@ -89,5 +92,22 @@ public static class GameEndpoints
     {
         await gameService.DeleteAsync(id);
         return Results.Ok();
+    }
+
+    public static async Task<IResult> SearchGamesAsync(
+        [FromQuery] string q,
+        [FromQuery] int? size,
+        [FromQuery] bool? onlyAvailable,
+        IGameSearchService gameSearchService)
+    {
+        if (string.IsNullOrWhiteSpace(q))
+            return Results.BadRequest(new { error = "Query parameter 'q' is required." });
+
+        var hits = await gameSearchService.SearchAsync(
+            q.Trim(),
+            size ?? 20,
+            onlyAvailable ?? true);
+
+        return Results.Ok(hits);
     }
 }

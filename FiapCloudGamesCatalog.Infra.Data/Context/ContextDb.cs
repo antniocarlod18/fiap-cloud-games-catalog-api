@@ -1,20 +1,24 @@
 using FiapCloudGamesCatalog.Domain.Abstractions;
+using FiapCloudGamesCatalog.Domain.Events;
 using FiapCloudGamesCatalog.Domain.Aggregates;
 using FiapCloudGamesCatalog.Domain.Entities;
 using Microsoft.EntityFrameworkCore;
-using System.Text.Json;
 
 namespace FiapCloudGamesCatalog.Infra.Data.Context
 {
     public class ContextDb : DbContext
     {
         private readonly IDomainEventDispatcher _dispatcher;
+        private readonly IStoredEventPersistence _storedEventPersistence;
+
         public ContextDb(
             DbContextOptions<ContextDb> options,
-            IDomainEventDispatcher dispatcher)
+            IDomainEventDispatcher dispatcher,
+            IStoredEventPersistence storedEventPersistence)
             : base(options)
         {
             _dispatcher = dispatcher;
+            _storedEventPersistence = storedEventPersistence;
         }
 
         public DbSet<Game> Games { get; set; }
@@ -22,7 +26,6 @@ namespace FiapCloudGamesCatalog.Infra.Data.Context
         public DbSet<Library> Libraries { get; set; }
         public DbSet<Cart> Carts { get; set; }
         public DbSet<Promotion> Promotions { get; set; }
-        public DbSet<StoredEvent> StoredEvents { get; set; }
 
         protected override void OnModelCreating(ModelBuilder modelBuilder)
         {
@@ -38,7 +41,11 @@ namespace FiapCloudGamesCatalog.Infra.Data.Context
                 .ToList();
 
             if (domainEvents.Count != 0)
-                await AppendStoredEventsAsync(domainEvents, cancellationToken);
+            {
+                var toStore = domainEvents.OfType<IStoredDomainEvent>().ToList();
+                if (toStore.Count > 0)
+                    await _storedEventPersistence.AppendStoredDomainEventsAsync(toStore, cancellationToken);
+            }
 
             var result = await base.SaveChangesAsync(cancellationToken);
 
@@ -48,48 +55,6 @@ namespace FiapCloudGamesCatalog.Infra.Data.Context
                 entry.Entity.ClearDomainEvents();
 
             return result;
-        }
-
-        private async Task AppendStoredEventsAsync(
-            IReadOnlyCollection<Domain.Events.IDomainEvent> domainEvents,
-            CancellationToken cancellationToken)
-        {
-            var eventsToStore = domainEvents
-                .OfType<Domain.Events.IStoredDomainEvent>()
-                .ToList();
-
-            if (eventsToStore.Count == 0)
-                return;
-
-            var eventsByAggregate = eventsToStore
-                .GroupBy(e => new { e.AggregateId, e.AggregateType })
-                .ToList();
-
-            foreach (var group in eventsByAggregate)
-            {
-                var currentVersion = await StoredEvents
-                    .Where(e => e.AggregateId == group.Key.AggregateId)
-                    .MaxAsync(e => (int?)e.Version, cancellationToken) ?? 0;
-
-                var nextVersion = currentVersion + 1;
-
-                foreach (var domainEvent in group)
-                {
-                    var eventType = domainEvent.GetType();
-                    var stored = new StoredEvent
-                    {
-                        AggregateId = group.Key.AggregateId,
-                        AggregateType = group.Key.AggregateType,
-                        Version = nextVersion++,
-                        EventType = eventType.Name,
-                        OccurredOn = domainEvent.OccurredOn,
-                        Data = JsonSerializer.Serialize(domainEvent, eventType),
-                        Metadata = null
-                    };
-
-                    await StoredEvents.AddAsync(stored, cancellationToken);
-                }
-            }
         }
     }
 }
