@@ -119,23 +119,17 @@ stages:
               action: createSecret
               secretName: $(imagePullSecret)
               dockerRegistryEndpoint: $(dockerRegistryServiceConnection)
-
-          - script: |
-              echo "=== PIPELINE WORKSPACE ==="
-              ls -R $(Pipeline.Workspace)
-
-            displayName: Debug Files
             
           - task: KubernetesManifest@0
             displayName: Deploy to Kubernetes cluster
             inputs:
               action: deploy
               manifests: |
-                $(Pipeline.Workspace)/manifests/FiapCloudGamesCatalog.Api/k8s/configmap.yml
-                $(Pipeline.Workspace)/manifests/FiapCloudGamesCatalog.Api/k8s/secret.yml
-                $(Pipeline.Workspace)/manifests/FiapCloudGamesCatalog.Api/k8s/migration.yml
-                $(Pipeline.Workspace)/manifests/FiapCloudGamesCatalog.Api/k8s/deployment.yml
-                $(Pipeline.Workspace)/manifests/FiapCloudGamesCatalog.Api/k8s/service.yml
+                $(Pipeline.Workspace)/manifests/configmap.yaml
+                $(Pipeline.Workspace)/manifests/secret.yaml
+                $(Pipeline.Workspace)/manifests/migration.yaml
+                $(Pipeline.Workspace)/manifests/deployment.yaml
+                $(Pipeline.Workspace)/manifests/service.yaml
               imagePullSecrets: |
                 $(imagePullSecret)
               containers: |
