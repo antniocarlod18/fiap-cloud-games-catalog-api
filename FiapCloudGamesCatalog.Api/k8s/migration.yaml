@@ -3,11 +3,13 @@ kind: Job
 metadata:
   name: catalog-migration
 spec:
+  ttlSecondsAfterFinished: 60
+  backoffLimit: 1
   template:
     spec:
       containers:
         - name: migration
-          image: fgcacr13245.azurecr.io/antniocarlodfiapcloudgamescatalogapi:latest
+          image: fgcacr13245.azurecr.io/antniocarlodfiapcloudgamescatalogapi:$(tag)
           command: ["dotnet", "FiapCloudGamesCatalog.Api.dll", "migrate"]
           envFrom:
             - configMapRef:
