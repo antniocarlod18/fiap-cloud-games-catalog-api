@@ -6,5 +6,5 @@ public class GameSearchElasticsearchOptions
 
     public string? Uri { get; set; }
     public string? ApiKey { get; set; }
-    public string GamesSearchIndexName { get; set; } = "catalog-games";
+    public string GamesSearchIndexName { get; set; } = "cataloggames";
 }

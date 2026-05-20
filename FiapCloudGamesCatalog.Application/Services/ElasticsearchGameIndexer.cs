@@ -11,7 +11,6 @@ public class ElasticsearchGameIndexer : IGameIndexer
 {
     private readonly ElasticsearchClient _client;
     private readonly string _indexName;
-    private readonly SemaphoreSlim _indexGate = new(1, 1);
 
     public ElasticsearchGameIndexer(ElasticsearchClient client, IOptions<GameSearchElasticsearchOptions> options)
     {
