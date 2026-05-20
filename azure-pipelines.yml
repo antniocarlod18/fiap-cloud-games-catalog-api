@@ -101,7 +101,7 @@ stages:
             inputs:
               rootDirectory: '$(Pipeline.Workspace)/manifests'
 
-              targetFiles: '**/*.yml'
+              targetFiles: '**/*.yaml'
 
               encoding: 'auto'
 
