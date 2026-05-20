@@ -120,6 +120,12 @@ stages:
               secretName: $(imagePullSecret)
               dockerRegistryEndpoint: $(dockerRegistryServiceConnection)
 
+          - script: |
+              echo "=== PIPELINE WORKSPACE ==="
+              ls -R $(Pipeline.Workspace)
+
+            displayName: Debug Files
+            
           - task: KubernetesManifest@0
             displayName: Deploy to Kubernetes cluster
             inputs:
