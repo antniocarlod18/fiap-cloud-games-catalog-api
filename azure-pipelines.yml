@@ -120,6 +120,10 @@ stages:
               secretName: $(imagePullSecret)
               dockerRegistryEndpoint: $(dockerRegistryServiceConnection)
             
+          - script: |
+              kubectl delete job catalog-migration --ignore-not-found=true
+            displayName: Delete Previous Migration Job
+
           - task: KubernetesManifest@0
             displayName: Deploy to Kubernetes cluster
             inputs:
