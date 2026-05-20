@@ -125,11 +125,11 @@ stages:
             inputs:
               action: deploy
               manifests: |
-                $(Pipeline.Workspace)/manifests/k8s/configmap.yml
-                $(Pipeline.Workspace)/manifests/k8s/secret.yml
-                $(Pipeline.Workspace)/manifests/k8s/migration.yml
-                $(Pipeline.Workspace)/manifests/k8s/deployment.yml
-                $(Pipeline.Workspace)/manifests/k8s/service.yml
+                $(Pipeline.Workspace)/manifests/FiapCloudGamesCatalog.Api/k8s/configmap.yml
+                $(Pipeline.Workspace)/manifests/FiapCloudGamesCatalog.Api/k8s/secret.yml
+                $(Pipeline.Workspace)/manifests/FiapCloudGamesCatalog.Api/k8s/migration.yml
+                $(Pipeline.Workspace)/manifests/FiapCloudGamesCatalog.Api/k8s/deployment.yml
+                $(Pipeline.Workspace)/manifests/FiapCloudGamesCatalog.Api/k8s/service.yml
               imagePullSecrets: |
                 $(imagePullSecret)
               containers: |
