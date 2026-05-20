@@ -1,0 +1,131 @@
+# Deploy to Azure Kubernetes Service
+# Build and push image to Azure Container Registry; Deploy to Azure Kubernetes Service
+# https://docs.microsoft.com/azure/devops/pipelines/languages/docker
+
+trigger:
+- master
+
+resources:
+- repo: self
+
+variables:
+
+  # Container registry service connection established during pipeline creation
+  dockerRegistryServiceConnection: 'c0c196b7-6307-40f2-8d06-3ab60ee1ffc8'
+  imageRepository: 'antniocarlodfiapcloudgamescatalogapi'
+  containerRegistry: 'fgcacr13245.azurecr.io'
+  dockerfilePath: '**/FiapCloudGamesCatalog.Api/Dockerfile'
+  tag: '$(Build.BuildId)'
+  imagePullSecret: 'fgcacr132450a5c-auth'
+
+  # Agent VM image name
+  vmImageName: 'ubuntu-latest'
+
+stages:
+# ==========================================
+# TESTS
+# ==========================================
+- stage: Tests
+  displayName: Unit Tests
+
+  jobs:
+  - job: UnitTests
+
+    pool:
+      vmImage: $(vmImageName)
+
+    steps:
+
+    - task: UseDotNet@2
+      inputs:
+        packageType: sdk
+        version: '8.0.x'
+
+    - task: DotNetCoreCLI@2
+      displayName: Restore
+      inputs:
+        command: restore
+        projects: '**/*.csproj'
+
+    - task: DotNetCoreCLI@2
+      displayName: Build
+      inputs:
+        command: build
+        projects: '**/*.csproj'
+        arguments: '--configuration Release'
+
+    - task: DotNetCoreCLI@2
+      displayName: Run Unit Tests
+      inputs:
+        command: test
+        projects: '**/*Tests.csproj'
+        arguments: '--configuration Release --collect:"XPlat Code Coverage"'
+
+# ==========================================
+# BUILD
+# ==========================================
+
+- stage: Build
+  displayName: Build stage
+  jobs:
+  - job: Build
+    displayName: Build
+    pool:
+      vmImage: $(vmImageName)
+    steps:
+    - task: Docker@2
+      displayName: Build and push an image to container registry
+      inputs:
+        command: buildAndPush
+        repository: $(imageRepository)
+        dockerfile: $(dockerfilePath)
+        containerRegistry: $(dockerRegistryServiceConnection)
+        tags: |
+          $(tag)
+
+    - upload: manifests
+      artifact: manifests
+
+    - task: PublishPipelineArtifact@1
+      displayName: Publish Kubernetes Manifests
+
+      inputs:
+        targetPath: 'k8s'
+        artifact: manifests
+
+- stage: Deploy
+  displayName: Deploy stage
+  dependsOn: Build
+
+  jobs:
+  - deployment: Deploy
+    displayName: Deploy
+    pool:
+      vmImage: $(vmImageName)
+    environment: 'antniocarlod18fiapcloudgamescatalogapi.default'
+    strategy:
+      runOnce:
+        deploy:
+          steps:
+          - task: KubernetesManifest@0
+            displayName: Create imagePullSecret
+            inputs:
+              action: createSecret
+              secretName: $(imagePullSecret)
+              dockerRegistryEndpoint: $(dockerRegistryServiceConnection)
+
+          - task: KubernetesManifest@0
+            displayName: Deploy to Kubernetes cluster
+            inputs:
+              action: deploy
+              manifests: |
+                $(Pipeline.Workspace)/manifests/deployment.yml
+                $(Pipeline.Workspace)/manifests/service.yml
+                $(Pipeline.Workspace)/manifests/configmap.yml
+                $(Pipeline.Workspace)/manifests/secret.yml
+                $(Pipeline.Workspace)/manifests/migration.yml
+              imagePullSecrets: |
+                $(imagePullSecret)
+              containers: |
+                $(containerRegistry)/$(imageRepository):$(tag)
+
