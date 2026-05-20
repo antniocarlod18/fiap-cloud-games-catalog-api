@@ -101,12 +101,17 @@ stages:
             inputs:
               rootDirectory: '$(Pipeline.Workspace)/manifests'
 
-              targetFiles: |
-                **/*.yml
+              targetFiles: '**/*.yml'
 
-              tokenPattern: custom
-              tokenPrefix: '#{'
-              tokenSuffix: '}#'
+              encoding: 'auto'
+
+              writeBOM: true
+
+              actionOnMissing: 'warn'
+
+              keepToken: false
+
+              tokenPattern: 'azpipelines'
 
           - task: KubernetesManifest@0
             displayName: Create imagePullSecret
@@ -114,17 +119,17 @@ stages:
               action: createSecret
               secretName: $(imagePullSecret)
               dockerRegistryEndpoint: $(dockerRegistryServiceConnection)
-
+            
           - task: KubernetesManifest@0
             displayName: Deploy to Kubernetes cluster
             inputs:
               action: deploy
               manifests: |
-                $(Pipeline.Workspace)/manifests/configmap.yml
-                $(Pipeline.Workspace)/manifests/secret.yml
-                $(Pipeline.Workspace)/manifests/migration.yml
-                $(Pipeline.Workspace)/manifests/deployment.yml
-                $(Pipeline.Workspace)/manifests/service.yml
+                $(Pipeline.Workspace)/manifests/configmap.yaml
+                $(Pipeline.Workspace)/manifests/secret.yaml
+                $(Pipeline.Workspace)/manifests/migration.yaml
+                $(Pipeline.Workspace)/manifests/deployment.yaml
+                $(Pipeline.Workspace)/manifests/service.yaml
               imagePullSecrets: |
                 $(imagePullSecret)
               containers: |
