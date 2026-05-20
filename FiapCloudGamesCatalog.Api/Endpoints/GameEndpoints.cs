@@ -21,7 +21,7 @@ public static class GameEndpoints
         endpoints.MapGet("/games/genre", GetByGenreAsync)
             .RequireAuthorization(policy => policy.RequireRole("Admin", "User"));
 
-        endpoints.MapGet("/games/available", GetAllAvailableAsync)
+        endpoints.MapGet("/games/change/available", GetAllAvailableAsync)
             .RequireAuthorization(policy => policy.RequireRole("Admin", "User"));
 
         endpoints.MapPut("/games/{id}", UpdateAsync)
