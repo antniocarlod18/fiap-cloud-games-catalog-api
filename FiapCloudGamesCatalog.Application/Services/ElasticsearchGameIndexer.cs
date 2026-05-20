@@ -12,7 +12,6 @@ public class ElasticsearchGameIndexer : IGameIndexer
     private readonly ElasticsearchClient _client;
     private readonly string _indexName;
     private readonly SemaphoreSlim _indexGate = new(1, 1);
-    private bool _indexEnsured;
 
     public ElasticsearchGameIndexer(ElasticsearchClient client, IOptions<GameSearchElasticsearchOptions> options)
     {
@@ -36,45 +35,28 @@ public class ElasticsearchGameIndexer : IGameIndexer
 
     private async Task EnsureIndexAsync(CancellationToken cancellationToken)
     {
-        if (_indexEnsured)
-            return;
-
-        await _indexGate.WaitAsync(cancellationToken);
-        try
+        var exists = await _client.Indices.ExistsAsync(_indexName, cancellationToken);
+        if (!exists.Exists)
         {
-            if (_indexEnsured)
-                return;
-
-            var exists = await _client.Indices.ExistsAsync(_indexName, cancellationToken);
-            if (!exists.Exists)
-            {
-                var createResponse = await _client.Indices.CreateAsync(
-                    _indexName,
-                    c => c.Mappings(m => m.Properties<GameSearchDocument>(p => p
-                        .Keyword(d => d.Id)
-                        .Text(d => d.Title)
-                        .Text(d => d.Genre)
-                        .Text(d => d.Description)
-                        .DoubleNumber(d => d.Price)
-                        .Boolean(d => d.Available)
-                        .Keyword(d => d.GamePlatforms)
-                        .Text(d => d.Developer)
-                        .Text(d => d.Distributor)
-                        .Text(d => d.GameVersion))),
-                    cancellationToken);
+            var createResponse = await _client.Indices.CreateAsync(
+                _indexName,
+                c => c.Mappings(m => m.Properties<GameSearchDocument>(p => p
+                    .Keyword(d => d.Id)
+                    .Text(d => d.Title)
+                    .Text(d => d.Genre)
+                    .Text(d => d.Description)
+                    .DoubleNumber(d => d.Price)
+                    .Boolean(d => d.Available)
+                    .Keyword(d => d.GamePlatforms)
+                    .Text(d => d.Developer)
+                    .Text(d => d.Distributor)
+                    .Text(d => d.GameVersion))),
+                cancellationToken);
                 
-                if (!createResponse.IsValidResponse)
-                {
-                    throw new Exception(createResponse.DebugInformation);
-                }
+            if (!createResponse.IsValidResponse)
+            {
+                throw new Exception(createResponse.DebugInformation);
             }
-            
-
-            _indexEnsured = true;
-        }
-        finally
-        {
-            _indexGate.Release();
         }
     }
 
