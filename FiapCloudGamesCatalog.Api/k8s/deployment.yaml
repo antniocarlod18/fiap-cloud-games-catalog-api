@@ -16,7 +16,7 @@ spec:
     spec:
       containers:
         - name: catalog-api
-          image: antniocarlod18/fiap-catalog:latest
+          image: IMAGE_PLACEHOLDER
           imagePullPolicy: IfNotPresent
           ports:
             - containerPort: 8080
